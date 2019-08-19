@@ -25,3 +25,13 @@ Search the overlap of the mapped two segment. This only for single-end chimeric 
 
 # A1_Extract.Chimeras.pl and A2_TransFormat.pl and A3_GetInfo.Chimeras.PRE.pl
 These 3 scripts provide filtering, classification, and statistics for single-end chimeric sequences.
+
+# the usage of bwa
+see the details in the https://github.com/lh3/bwa.
+
+# Contact:
+We will be pleased to address any question or concern you may have with the ChimeraMiner: nlu@seu.edu.cn
+
+# Citing ChimeraMiner
+If you use ChimeraMiner in your work, please cite:
+> Lu, N.; Li, J.; Bi, C.; Guo, J.; Tao, Y.; Luan, K.; Tu, J.; Lu, Z. ChimeraMiner: An Improved Chimeric Read Detection Pipeline and Its Application in Single Cell Sequencing. Int. J. Mol. Sci. 2019, 20, 1953.
