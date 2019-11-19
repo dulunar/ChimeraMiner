@@ -10,21 +10,24 @@ Usage: perl $0
 	-o <out file>
 	-d <output directory>
 	-L <min Length of each segment> <default:30>
+	-r <reference index directory> <default: /home/luna/Desktop/database/homo_bwa>
 ";
 
-my ($in,$out,$dir,$minLen,$help);
+my ($in,$out,$dir,$minLen,$refdir,$help);
 
 GetOptions(
 		'i=s'	=>	\$in,
 		'o=s'	=>	\$out,
 		'd=s'	=>	\$dir,
 		"L=s"	=>	\$minLen,
+		'r=s'	=>	\$refdir,
 		'h|?'	=>	\$help,
 		);
 
 die "$usage\n" if ($help || !$in || !$out || !$dir);
 
 $minLen ||= 30;
+$refdir ||= "/home/luna/Desktop/database/homo_bwa";
 
 `mkdir -p $dir/chimeras`if(!(-d "$dir/chimeras"));
 my $samtools = "/home/luna/Desktop/Software/samtools/samtools";
@@ -215,7 +218,7 @@ sub length_cut_2{
 ##获得全长reads在reference上的序列;
 sub ref_reads_seq{
 	my ($chr,$start,$end) = @_;
-	my $ref_reads_sequence = `$samtools faidx /home/luna/Desktop/database/homo_bwa/$chr.fa $chr:$start-$end`;
+	my $ref_reads_sequence = `$samtools faidx $refdir/$chr.fa $chr:$start-$end`;
 	my @ALL = split /\n/,$ref_reads_sequence; 
 	$ref_reads_sequence=""; 
 	for(my $i = 1;$i<=$#ALL;$i++){
