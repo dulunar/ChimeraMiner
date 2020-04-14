@@ -1,19 +1,19 @@
+#!/usr/bin/perl -w
 #########################################################################
 # File Name: format.bwa2soap.pl
 # Author: Luna
 # Mail: nlu@seu.edu.cn
 # Created Time: Mon 17 Dec 2018 07:11:16 PM CST
 #########################################################################
-#!/usr/bin/perl -w
- use Getopt::Long;
- my ($in,$out,$help);
+use Getopt::Long;
+my ($in,$out,$help);
 
- GetOptions
- (
-  "i|in=s"=>\$in,
-  "o|out=s"=>\$out,
-  "h|help|?"=>\$help,
- );
+GetOptions
+(
+	"i|in=s"=>\$in,
+	"o|out=s"=>\$out,
+	"h|help|?"=>\$help,
+);
 
 my $usage=<<INFO;
 

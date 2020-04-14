@@ -1,10 +1,10 @@
+#!/usr/bin/perl -w
 #########################################################################
-# File Name: fq2align.pl
+# File Name: AlignReadstoRef.pl
 # Author: Luna
 # Mail: nlu@seu.edu.cn
 # Created Time: Fri 21 Oct 2016 21:18:27 CST
 #########################################################################
-#!/usr/bin/perl -w
 use strict;
 use Getopt::Long;
 use Cwd qw(abs_path);
@@ -12,7 +12,14 @@ my ($fq,$ref,$hdir,$sh,$algo,$dh,$cpu,$help);
 
 GetOptions
 (
-	"fq=s"=>\$fq, "ref=s"=>\$ref, "hdir=s"=>\$hdir, "Algo=s"=>\$algo,       "sh=s"=>\$sh,   "dh=s"=>\$dh,	"T|cpu=s"=>\$cpu,	"help|?"=>\$help,
+	"fq=s"=>\$fq,
+	"ref=s"=>\$ref,
+	"hdir=s"=>\$hdir,
+	"Algo=s"=>\$algo,
+	"sh=s"=>\$sh,
+	"dh=s"=>\$dh,
+	"T|cpu=s"=>\$cpu,
+	"help|?"=>\$help,
 );
 
 my $usage=<<INFO;
