@@ -1,10 +1,10 @@
+#!/usr/bin/perl -w
 #########################################################################
 # File Name: Run_Finder.pl
 # Author: Luna
 # Mail: nlu@seu.edu.cn
 # Created Time: Tue 25 Sep 2018 06:44:00 PM CST
 #########################################################################
-#!/usr/bin/perl -w
 use strict;
 use Getopt::Long;
 use File::Basename;

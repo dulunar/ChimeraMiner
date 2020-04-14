@@ -1,6 +1,10 @@
 #!/usr/bin/perl -w
 use strict;
 use Getopt::Long;
+use File::Basename;
+use Cwd qw(abs_path);
+use File::Spec;
+
 my $usage = "
 for first alignment file:
 1.seleted first-type chimeric reads	(++ or --).
@@ -28,6 +32,8 @@ die "$usage\n" if ($help || !$in || !$out || !$dir);
 
 $minLen ||= 30;
 $refdir ||= "/home/luna/Desktop/database/homo_bwa";
+
+die "no $refdir" if(! -d "$refdir");
 
 `mkdir -p $dir/chimeras`if(!(-d "$dir/chimeras"));
 my $samtools = "/home/luna/Desktop/Software/samtools/samtools";
