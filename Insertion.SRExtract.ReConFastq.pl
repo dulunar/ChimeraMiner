@@ -1,6 +1,10 @@
 #!/usr/bin/perl -w
 use strict;
 use Getopt::Long;
+use Cwd qw(abs_path);
+use File::Spec;
+use File::Basename;
+
 my $usage = "
 for first alignment file:
 	Step 1:
@@ -17,7 +21,7 @@ for first alignment file:
 	Usage: perl $0 
 				-i <bam file>
 				-d <output directory>
-				-r <reference index directory> <default: /home/luna/Desktop/database/homo_bwa>
+				-r <complete path of genome reference> <default: /home/luna/Desktop/database/homo_bwa/hsa.fa>
 				-g <genome chromosome(optional)>
 				-L <chromosome length(optional)>
 					options -g -L have to exist together!
@@ -25,12 +29,12 @@ for first alignment file:
 				-f <INT> <the max fragment length of a paired-end read> <default:1000>
 ";
 
-my ($in,$dir,$refdir,$genome,$length,$name,$limitdis,$help);
+my ($in,$dir,$ref,$genome,$length,$name,$limitdis,$help);
 
 GetOptions(
 	'i=s'	=>	\$in,
 	'd=s'	=>	\$dir,
-	'r=s'	=>	\$refdir,
+	'r=s'	=>	\$ref,
 	'm=s'	=>	\$name,
 	'g=s'   =>  \$genome,
 	'L=s'   =>	\$length,
@@ -42,7 +46,11 @@ die "$usage\n" if ($help || !$in ||  !$dir || !$name);
 
 my $count = 0;
 
-$refdir ||= "/home/luna/Desktop/database/homo_bwa";
+$ref ||= "/home/luna/Desktop/database/homo_bwa/hsa.fa";
+
+`samtools faidx $ref` if(! -e "${ref}.fai"); # check if there indexed for reference.
+
+my $refdir = dirname(File::Spec->rel2abs( $ref ));      chomp $refdir;
 
 $limitdis ||= 1000;
 my (@chr,@genome);
@@ -80,7 +88,7 @@ elsif($in =~ /\.sam\.gz$/){
 open OA, "| gzip >  $dir/$name.first.chi.gz" || die $!;
 open OC, "| gzip >> $dir/$name.first.sam.gz" || die $!;
 open OW, "| gzip > $dir/$name.wasted.gz"  || die $!;
-open BAM,"| samtools view -Sb -t $refdir/hsa.fa.fai -o $dir/$name.PE.mappable.bam - " || die $!;
+open BAM,"| samtools view -Sb -t ${ref}.fai -o $dir/$name.PE.mappable.bam - " || die $!;
 
 `rm -rf $dir/Chr_split && mkdir -p $dir/Chr_split` if((-d "$dir/Chr_split"));
 `mkdir -p $dir/Chr_split` if(!(-d "$dir/Chr_split"));
