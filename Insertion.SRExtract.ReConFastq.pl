@@ -1,4 +1,11 @@
 #!/usr/bin/perl -w
+#########################################################################
+# FileName: Insertion.SRExtract.ReConFastq.pl
+# Version: 6cd6a087-188a-4094-ace0-ce63b2af80de
+# Author: Luna <nlu@seu.edu.cn>
+# CreatedTime: Tue 04 Aug 2019 05:35:01 PM CST
+#########################################################################
+
 use strict;
 use Getopt::Long;
 use Cwd qw(abs_path);
