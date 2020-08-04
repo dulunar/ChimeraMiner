@@ -71,7 +71,7 @@ while(<IN>){
 	print OH "echo starts\ndate\n";
 	print OH "perl $step1 -i $bam -m $samp -d $dir -r $ref && echo first split and find INSERT chimerasjob done\ndate\n";
 	print OH "sh $dir/Chr_split/run.aln.sh &> $dir/Chr_split/run.aln.sh.log && echo realign soft-alignment reads to reference\n";
-	print OH "split -l 6 $dir/run.$samp.4Search.sh $dir/run.4Search\n";
+	print OH "split -l 8 $dir/run.$samp.4Search.sh $dir/run.4Search\n";
 	print OH "chmod +x $dir/run.4Search*\n";
 	print OH "ls $dir/run.4Search* | perl -ne \'chomp;\`nohup sh \$_ &> \$_.log &\`;\'\n";
 	
