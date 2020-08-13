@@ -95,7 +95,7 @@ elsif($in =~ /\.sam\.gz$/){
 open OA, "| gzip >  $dir/$name.first.chi.gz" || die $!;
 open OC, "| gzip >> $dir/$name.first.sam.gz" || die $!;
 open OW, "| gzip > $dir/$name.wasted.gz"  || die $!;
-open BAM,"| samtools view -Sb -t ${ref}.fai -o $dir/$name.PE.mappable.bam - " || die $!;
+open BAM,"| samtools view -Sb --reference $ref -l 9 -o $dir/$name.PE.mappable.bam - " || die $!;
 
 `rm -rf $dir/Chr_split && mkdir -p $dir/Chr_split` if((-d "$dir/Chr_split"));
 `mkdir -p $dir/Chr_split` if(!(-d "$dir/Chr_split"));
@@ -108,9 +108,9 @@ my %handle = ();
 for my $i(1..22,"X","Y","MT"){
 	$out1 = "$dir/Chr_split/chr$i.1.fastq";
 	$OUT1 = "Fchr".$i;  ##First chr"$i" file
-		$out2 = "$dir/Chr_split/chr$i.2.fastq";
+	$out2 = "$dir/Chr_split/chr$i.2.fastq";
 	$OUT2 = "Schr".$i;      ##Second chr"$i" file
-		open ( $handle{$OUT1}, "| gzip > $out1.gz" ) or die "$!";
+	open ( $handle{$OUT1}, "| gzip > $out1.gz" ) or die "$!";
 	open ( $handle{$OUT2}, "| gzip > $out2.gz" ) or die "$!";
 }
 
