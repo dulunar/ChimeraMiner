@@ -179,7 +179,7 @@ close $OUT2;
 close BAM;
 close OW;
 
-`samtools reheader -P -i header.sam $dir/$name.PE.mappable.bam > $dir/$name.temp.bam && mv -f $dir/$name.temp.bam $dir/$name.PE.mappable.bam`;
+`samtools reheader -P -i header.sam $dir/$name.PE.mappable.bam`;
 
 print "$count is done\n";
 print "###distinguish $name end\n";
