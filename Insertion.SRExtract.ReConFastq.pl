@@ -95,7 +95,7 @@ elsif($in =~ /\.sam\.gz$/){
 open OA, "| gzip >  $dir/$name.first.chi.gz" || die $!;
 open OC, "| gzip >> $dir/$name.first.sam.gz" || die $!;
 open OW, "| gzip > $dir/$name.wasted.gz"  || die $!;
-open BAM,"| samtools view -Sb --reference $ref -l 9 -o $dir/$name.PE.mappable.bam - " || die $!;
+open BAM,"| samtools view -Sb --reference $ref -o $dir/$name.PE.mappable.bam - " || die $!;
 
 `rm -rf $dir/Chr_split && mkdir -p $dir/Chr_split` if((-d "$dir/Chr_split"));
 `mkdir -p $dir/Chr_split` if(!(-d "$dir/Chr_split"));
