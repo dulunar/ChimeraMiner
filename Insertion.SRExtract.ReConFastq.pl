@@ -95,8 +95,8 @@ elsif($in =~ /\.sam\.gz$/){
 open OA, "| gzip >  $dir/$name.first.chi.gz" || die $!;
 open OC, "| gzip >> $dir/$name.first.sam.gz" || die $!;
 open OW, "| gzip > $dir/$name.wasted.gz"  || die $!;
-open BAM,"| samtools view -Sb --reference $ref -o $dir/$name.PE.mappable.bam - " || die $!;
-# or open BAM, " | sambamba view -S -f bam -T $ref -o $dir/$name.PE.mappable.bam /dev/stdin" || die $!;
+open BAM,"| samtools view -Sb --reference $ref -o $dir/$name.PE.mappable.bam - " || die $!; # for samtools 1.8
+# or open BAM, " | sambamba view -S -f bam -T $ref -o $dir/$name.PE.mappable.bam /dev/stdin" || die $!; # for sambamba 0.7.1
 # or open BAM, " | sambamba view -S -f bam -o $dir/$name.PE.mappable.bam /dev/stdin" || die $!;
 
 
