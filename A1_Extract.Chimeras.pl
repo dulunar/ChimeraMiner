@@ -6,22 +6,27 @@ Usage: perl $0
 	-d <string> <the directory of all chimeras file>
 	-n <string> <the name of this sample>
 	-L <string> <min length of segment> <Default:30>
-Example: perl $0 -d /mainsd/luna/work/haplotype_phase/new_pipeline/alignment/SRX247249/chimeras -n SRX247249 -L 20\n";
+	-s <INT> <the smallest distance of two segment> <default: 25>
+        -b <INT> <the biggest distance of two segment> <default: 5000>
+Example: perl $0 -d /mainsd/luna/work/haplotype_phase/new_pipeline/alignment/SRX247249/chimeras -n SRX247249 -L 30 -s 25 -b 5000\n";
 
-my ($in,$dir,$name,$minLen,$help);
+my ($in,$dir,$name,$minLen,$help,$smd, $bgd);
 
 GetOptions(
-	'd=s'   => \$dir,
-	'help|?' => \$help,
-	'L=s'	=>	\$minLen,
-	'n=s'	=>	\$name,
+	'd=s'           =>      \$dir,
+        'help|?'        =>      \$help,
+        'L=s'           =>      \$minLen,
+        'n=s'           =>      \$name,
+        's=i'           =>      \$smd,
+        'b=i'           =>      \$bgd,
 );
-
-#$in ||= "YH_Bulk.ALL.CHR";
 
 die "$usage\n" if ($help || !$dir);
 
 $minLen ||= 30;
+$smd ||= 25;
+$bgd ||= 5000;
+
 `mkdir -p $dir/chimeras_analysis` if(!(-d "$dir/chimeras_analysis"));
 my $out = "$dir/chimeras_analysis/normal.txt";
 my $out_1 = "$dir/chimeras_analysis/error.txt";
@@ -54,25 +59,22 @@ for my $chr (1..22,"X","Y","MT"){
 		chomp $line_5;
 		chomp $line_6;
 
-		my @temp_1 = split /\t/, $line_3;
-		my $str_1 = $temp_1[1];
-		my $length_1 = length($temp_1[3]);
+		my ($chr,$str1,$bg1,$seq1,$ed1) = (split /\t/,$line_3)[0,1,2,3,4];
+                my ($lhr,$str2,$bg2,$seq2,$ed2) = (split /\t/,$line_4)[0,1,2,3,4];
+                my ($seqp, $lap, $tan) = (split /\t/,$line_5)[2,3,5];
+                my ($lenp) = $lap =~ /(.*)nt/;
+                my ($dis) = $tan =~ /(.*)nt/;
 
-		my @temp_2 = split /\t/, $line_4;
-		my $str_2 = $temp_2[1];
-		my $length_2 = length($temp_2[3]);
+		my $len1 = length($seq1);
+                my $len2 = length($seq2);
 
-		my @temp_3 = split /\s/, $line_5;
-		my ($overlap) = $temp_3[3] =~ /(.*)nt/;
-		my ($distance) = $temp_3[5] =~ /(.*)nt/;
-
-		if ($length_2 < $minLen || $length_1 < $minLen) {
+		if ($len2 < $minLen || $len1 < $minLen) {
 			print OUT_1 "$line_1\n$line_2\n$line_3\n$line_4\n$line_5\n$line_6\n";
 		}
-		elsif (($str_1 eq $str_2) && ((abs($distance) <= 2))) {
+		elsif (abs($dis) > $bgd && abs($dis) > $smd) {
 			print OUT_1 "$line_1\n$line_2\n$line_3\n$line_4\n$line_5\n$line_6\n";
 		}
-		elsif(abs($overlap) <= 2) {
+		elsif(abs($lenp) <= 2 || $lenp eq "") {
 			print OUT_1 "$line_1\n$line_2\n$line_3\n$line_4\n$line_5\n$line_6\n";
 		}
 		else {
