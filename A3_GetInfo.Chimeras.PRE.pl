@@ -49,9 +49,9 @@ while (my $line_1 = <IN>) {
 	next unless( length($seq1) >= $len );
 	next unless( length($seq2) >= $len );
 	my ($lap, $dis) = (split /\t/,$line_4)[1,2];
-	my $len = (split /\s+/,$lap)[0];
+	my $lenp = (split /\s+/,$lap)[0];
 	my $distance = (split /\s+/,$dis)[1];
-	next unless($len ne "" && $len >= 3);
+	next unless($lenp ne "" && $lenp >= 3);
 	next unless(abs($distance) <= $bgd && abs($distance) >= $smd);
 	
 	if ($str_1 eq "+" && $str_2 eq "-"){
