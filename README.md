@@ -34,7 +34,8 @@ I recommand to use "cpanm" to install Perl Modules.
 The Test folder contains an example. It turns out that all the scripts are running. You can check out how to use the pipeline. 
 In this folder, just run workstep.sh first, this shell will generate bam file and chimera's files. When all works in workstep.sh finished, then run filterstep.sh, this shell will deal with the chimera's files and count.
 
-### First, align reads to reference, use bwa mem, generate a list contains "SampleID	BAMFile";
+### First, align reads to reference
+use bwa mem to map the reads to hg19, generate a list contains "SampleID	BAMFile", each sample each line;
 ```shell
 ref=/home/luna/Desktop/database/homo_bwa/hsa.fa
 bwa mem -t 20 -k 30 -R '@RG\tID:Test\tLB:Test\tSM:Test\tPL:ILLUMINA' $ref test_R1.fq.gz test_R2.fq.gz | awk '$6 !~ /H/' | samtools view -Sb -t ${ref}.fai -o $dir/Test/Test.dh.bam -
@@ -42,40 +43,23 @@ echo -e "Test\t$dir/Test/Test.dh.bam" > bam.lst
 ```
 
 ###  Generate_Shell_Finder.pl	
-Generate a shelle script for run the ChimeraMiner.
+Use bam.lst as input file. Generate a shelle script for running the ChimeraMiner.
 ```shell
 perl Generate_Shell_Finder.pl -i bam.lst -o runFinder.Test.sh -L 20 -r $ref
 ```
 
-### Insertion.SRExtract.ReConFastq.pl
-```shell
-for first alignment file:
-	Step 1:
-			seleted first-type chimeric reads	(++ or --).
-	Step 2:
-			Extract the sequences which are soft-aligned with xxSxxM , xxMxxS or xxSxxMxxS in alignment format from BWA-aligned SAM file.
-			        Any Soft-aligned fragment mustn't shorter than log4(Chromosome_Length) nt.
-	Step 3:
-			Reconstruct FASTQ file from all qualified soft-aligned reads. 
-			Qualified reads would be cut into two or three part according to the soft-aligned format.
-			All reads would be separated into different chromosomes according to the primary alignment results by BWA.
-			Cut reads generated in here would be aligned to Hg19 reference by using BWA-sampe mode.
-```
+### runFinder.Test.sh
+run the shell script, do some works:
+1. Insertion.SRExtract.ReConFastq.pl for searching insertion chimeras, extracting soft-clipped alignment reads as candidate single-ended chimeric reads (direct and inverted) and re-constructring  pe fastqs (each chromosome has two fastq files) for candidate chimeras
+2. aligned chromosome fastq files to chromosome reference respectively.
+3. SearchOverlapSEchimera.pl for searching the overlap sequence of two adjacent segments of  candidate single-ended chimeric reads, when searching the overlap sequence, we carry out each chromosome independently.
 
-### SearchOverlapSEchimera.pl	
-Search the overlap of the mapped two segment. This only for single-end chimeric sequences.
-```shell
-dir=/home/luna/Desktop/Tools/git/ChimeraMiner
-perl Insertion.SRExtract.ReConFastq.pl -i $dir/Test/Test.dh.bam -m Test -d $dir/Test -r $ref
-```
-
-## A1_Extract.Chimeras.pl A2_TransFormat.pl A3_GetInfo.Chimeras.PRE.pl
-These 3 scripts provide filtering, classification, and statistics for single-end chimeric sequences.
-```shell
-perl $dir/A1_Extract.Chimeras.pl -d $dir/Test/chimeras -n Test -L 20
-perl $dir/A2_TransFormat.pl -i $dir/Test/chimeras/chimeras_analysis/normal.txt -o $dir/Test/chimeras/chimeras_analysis/normal.TransFormat
-perl $dir/A3_GetInfo.Chimeras.PRE.pl -i $dir/Test/chimeras/chimeras_analysis/normal.TransFormat -d $dir/Test/chimeras/chimeras_analysis/Test.direct -v $dir/Test/chimeras/chimeras_analysis/Test.inverted  > Test.stat
-```
+### ChimerasDownstream.pl
+This script is used for downstream analysis of chimeras:
+1. Merge chimeras of each chromosome to a file
+2. Tranform the raw format of chimeras to a better format for viewing
+3. Extracting the direct chimera and inverted chimera to different files.
+4. Count the chimera types'++' '--' '+-' '-+' , and the number of direct chimera and inverted chimera.
 
 ## the usage of bwa
 see the details in the [page](https://github.com/lh3/bwa).

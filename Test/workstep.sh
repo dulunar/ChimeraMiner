@@ -22,7 +22,7 @@ bwa mem -t 20 -k 30 -R '@RG\tID:Test\tLB:Test\tSM:Test\tPL:ILLUMINA' $ref test_R
 echo -e "Test\t$dir/Test/Test.dh.bam" > bam.lst
 
 # step 2, generate a shell script for run ChimeraMiner, in here "-L Options" means the min Length of each segment.
-perl $dir/Generate_Shell_Finder.pl -i bam.lst -o runFinder.Test.sh -L 20 -r $ref
+perl $dir/Generate_Shell_Finder.pl -i bam.lst -o runFinder.Test.sh -L 20 -r $ref -t /home/luna/Desktop/Software/samtools/samtools/samtools -b /home/luna/Desktop/Software/bwa/bwa
 
 # step3, run the shell script, when search the overlap, We carry out each chromosome independently.
-sh runFinder.Test.sh
+nohup sh runFinder.Test.sh &> runFinder.Test.sh.log &
