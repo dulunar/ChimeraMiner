@@ -12,31 +12,34 @@ use Cwd qw(abs_path);
 use File::Spec;
 use File::Basename;
 
+my $red = "\033[0;31m";
+my $rend = "\033[0m";
+
 my $usage = "
 for first alignment file:
 	Step 1:
-			seleted first-type chimeric reads	(++ or --).
+		seleted first-type chimeric reads	(++ or --).
 	Step 2:
-			Extract the sequences which are soft-aligned with xxSxxM , xxMxxS or xxSxxMxxS in alignment format from BWA-aligned SAM file.
-			        Any Soft-aligned fragment mustn't shorter than log4(Chromosome_Length) nt.
+		Extract the sequences which are soft-aligned with xxSxxM , xxMxxS or xxSxxMxxS in alignment format from BWA-aligned SAM file.
+		Any Soft-aligned fragment mustn't shorter than log4(Chromosome_Length) nt.
 	Step 3:
-			Reconstruct FASTQ file from all qualified soft-aligned reads. 
-			Qualified reads would be cut into two or three part according to the soft-aligned format.
-			All reads would be separated into different chromosomes according to the primary alignment results by BWA.
-			Cut reads generated in here would be aligned to Hg19 reference by using BWA-sampe mode.
+		Reconstruct FASTQ file from all qualified soft-aligned reads. 
+		Qualified reads would be cut into two or three part according to the soft-aligned format.
+		All reads would be separated into different chromosomes according to the primary alignment results by BWA.
+		Cut reads generated in here would be aligned to Hg19 reference by using BWA-sampe mode.
 
-	Usage: perl $0 
-				-i <bam file>
-				-d <output directory>
-				-r <complete path of genome reference> <default: /home/luna/Desktop/database/homo_bwa/hsa.fa>
-				-g <genome chromosome(optional)>
-				-L <chromosome length(optional)>
-					options -g -L have to exist together!
-				-m <sample name or ID>
-				-f <INT> <the max fragment length of a paired-end read> <default:1000>
+Usage: perl $0 
+		-i <bam file>
+		-d <output directory>
+		-r <complete path of genome reference> <default: /home/luna/Desktop/database/homo_bwa/hsa.fa>
+		-g <genome chromosome(optional)>
+		-L <chromosome length(optional)>
+			${red}options -g -L have to exist together!$rend
+		-m <sample name or ID>
+		-f <INT> <the max fragment length of a paired-end read> <default:1000>
 ";
 
-my ($in,$dir,$ref,$genome,$length,$name,$limitdis,$help);
+my ($in,$dir,$ref,$genome,$length,$name,$limitdis,$samtools,$bwa,$help);
 
 GetOptions(
 	'i=s'	=>	\$in,
@@ -46,6 +49,8 @@ GetOptions(
 	'g=s'   =>  \$genome,
 	'L=s'   =>	\$length,
 	'f=s'	=>	\$limitdis,
+	'b=s'	=>	\$bwa,
+	't=s'	=>	\$samtools,
 	'h|?'	=>	\$help,
 );
 
@@ -54,10 +59,27 @@ die "$usage\n" if ($help || !$in ||  !$dir || !$name);
 my $count = 0;
 
 $ref ||= "/home/luna/Desktop/database/homo_bwa/hsa.fa";
+die "$red$ref did not exists$rend\n" if(! -e "$ref");
 
 `samtools faidx $ref` if(! -e "${ref}.fai"); # check if there indexed for reference.
 
-my $refdir = dirname(File::Spec->rel2abs( $ref ));      chomp $refdir;
+my $refdir = dirname(File::Spec->rel2abs( $ref ));
+chomp $refdir;
+$refdir=~s/^\s+|\s+$//g;
+
+if(! defined $samtools){
+    $samtools = `which samtools`;
+    $samtools=~s/^\s+|\s+$//g;
+}
+die "$red samtools not exists, please write your samtools path to your environment$rend\n" if(! $samtools);
+die $red."$samtools not exists, Please Check it$rend\n" if(! -e $samtools);
+
+if(! defined $bwa){
+    $bwa = `which bwa`;
+    $bwa=~s/^\s+|\s+$//g;
+}
+die "$red bwa did not exists, please write your bwa path to your environment$rend\n" if(! $bwa);
+die $red."$bwa not exists, Please Check it$rend\n" if(! -e $bwa);
 
 $limitdis ||= 1000;
 my (@chr,@genome);
@@ -78,34 +100,45 @@ if($in =~ /\.bam$/){
 }
 elsif($in =~ /\.sam$/){
 	`grep "^@" $in | gzip > $dir/$name.first.sam.gz`;
+	`grep "^@" $in > $dir/header.sam`;
 }
 elsif($in =~ /\.sam\.gz$/){
 	`zgrep "^@" $in | gzip > $dir/$name.first.sam.gz`;
+	`zgrep "^@" $in > $dir/header.sam`;
+}
+else{
+	die $red."this file format is not suit for this tools$rend\n";
 }
 
 if($in =~ /\.bam$/){
-	open IN, "samtools view $in | awk '\$6 !~ /H/' | " or die "$!";
+	open IN, "$samtools view $in | awk '\$6 !~ /H/' | " or die "$!";
 }
 elsif($in =~ /\.sam$/){
-	open IN, "$in | awk '\$6 !~ /H/' | " or die "$!";
+	open IN, "cat $in | awk '\$6 !~ /H/' | " or die "$!";
 }
 elsif($in =~ /\.sam\.gz$/){
 	open IN, "gzip -dc $in |" or die "$!";	
 }
+else{
+	die $red."this file format is not suit for this tools$rend\n";
+}
+
 open OA, "| gzip >  $dir/$name.first.chi.gz" || die $!;
 open OC, "| gzip >> $dir/$name.first.sam.gz" || die $!;
 open OW, "| gzip > $dir/$name.wasted.gz"  || die $!;
-open BAM,"| samtools view -Sb --reference $ref -o $dir/$name.PE.mappable.bam - " || die $!; # for samtools 1.8
+open BAM,"| $samtools view -Sb --reference $ref -o $dir/$name.PE.mappable.bam - " || die $!; # for samtools 1.8
 # or open BAM, " | sambamba view -S -f bam -T $ref -o $dir/$name.PE.mappable.bam /dev/stdin" || die $!; # for sambamba 0.7.1
 # or open BAM, " | sambamba view -S -f bam -o $dir/$name.PE.mappable.bam /dev/stdin" || die $!;
-
 
 `rm -rf $dir/Chr_split && mkdir -p $dir/Chr_split` if((-d "$dir/Chr_split"));
 `mkdir -p $dir/Chr_split` if(!(-d "$dir/Chr_split"));
 
-my $out1;	my $out2;
-my $ot1;	my $ot2;
-my $OUT1;   my $OUT2;
+my $out1;
+my $out2;
+my $ot1;
+my $ot2;
+my $OUT1;
+my $OUT2;
 my %handle = ();
 
 for my $i(1..22,"X","Y","MT"){

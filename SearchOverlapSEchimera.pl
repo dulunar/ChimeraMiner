@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 use strict;
 use Getopt::Long;
-use File::Basename;
-use Cwd qw(abs_path);
-use File::Spec;
+
+my $red = "\033[0;31m";
+my $rend = "\033[0m";
 
 my $usage = "
 for first alignment file:
@@ -14,17 +14,19 @@ Usage: perl $0
 	-o <out file>
 	-d <output directory>
 	-L <min Length of each segment> <default:30>
-	-r <reference index directory> <default: /home/luna/Desktop/database/homo_bwa>
+	-r <directory for storing the reference and each chromosome> <default: /home/luna/Desktop/database/homo_bwa>
+	-t <the complete path of samtools> (dflt: `which samtools`)
 ";
 
-my ($in,$out,$dir,$minLen,$refdir,$help);
+my ($in,$out,$dir,$minLen,$refdir,$samtools,$help);
 
 GetOptions(
 		'i=s'	=>	\$in,
 		'o=s'	=>	\$out,
 		'd=s'	=>	\$dir,
 		"L=s"	=>	\$minLen,
-		'r=s'	=>	\$refdir,
+		"r=s"	=>	\$refdir,
+		"t=s"	=>	\$samtools,
 		'h|?'	=>	\$help,
 		);
 
@@ -32,11 +34,16 @@ die "$usage\n" if ($help || !$in || !$out || !$dir);
 
 $minLen ||= 30;
 $refdir ||= "/home/luna/Desktop/database/homo_bwa";
-
-die "no $refdir" if(! -d "$refdir");
+die "$red$refdir did not exists$rend\n" if(! -e "$refdir");
 
 `mkdir -p $dir/chimeras`if(!(-d "$dir/chimeras"));
-my $samtools = "/home/luna/Desktop/Software/samtools/samtools";
+
+if(! defined $samtools){
+    $samtools = `which samtools`;
+    $samtools=~s/^s+|\s+$//g;
+}
+die "$red samtools not exists, please write your samtools path to your environment configuration, maybe ~/.bashrc$rend\n" if(! $samtools);
+die $red."$samtools not exists, Please Check it$rend\n" if(! -e $samtools);
 
 if($in =~ /\.bam$/){
 	open IN, "$samtools view $in | awk '\$6 !~ /H/' |" or die "$!";
@@ -48,8 +55,9 @@ else{
 	open IN, "cat $in | awk '\$6 !~ /H/' |" or die "$!";
 }
 
-open OUT, "> $dir/chimeras/$out" || die $!;
-open ERR, "> $dir/chimeras/$out.err" || die $!;
+open OUT, "| gzip > $dir/chimeras/$out.gz" || die $!;
+open OBAM, "| $samtools view -Sb -t $refdir/hsa.fa.fai -o $dir/chimeras/$out.bam - " || die $!;
+open ERR, "| gzip > $dir/chimeras/$out.err.gz" || die $!;
 while(<IN>){
 	chomp;
 	next unless($_ !~ /^@/);
@@ -74,17 +82,21 @@ while(<IN>){
 	else{
 		my ($I_1, $D_1, $I_2, $D_2) = (0, 0, 0, 0);
 		my $pos_1_start = $pos_1;	
-		($I_1) = $format_1 =~ /(\d+)I/ if($format_1 =~ /I/);		($D_1) = $format_1 =~ /(\d+)D/ if($format_1 =~ /D/);
+		($I_1) = $format_1 =~ /(\d+)I/ if($format_1 =~ /I/);
+		($D_1) = $format_1 =~ /(\d+)D/ if($format_1 =~ /D/);
 		my $pos_1_end = $pos_1 + $map1 + $D_1 - $I_1 -1;
 
 		my $pos_2_start = $pos_2;	
-		($I_2) = $format_2 =~ /(\d+)I/ if($format_2 =~ /I/);		($D_2) = $format_2 =~ /(\d+)D/ if($format_2 =~ /D/);
+		($I_2) = $format_2 =~ /(\d+)I/ if($format_2 =~ /I/);
+		($D_2) = $format_2 =~ /(\d+)D/ if($format_2 =~ /D/);
 		my $pos_2_end = $pos_2 + $map2 + $D_1 - $I_1 - 1;
 
-		my $segment_ref_sequence;	my $reverse_extend_forward;		my $reverse_extend_end;
+		my $segment_ref_sequence;
+		my $reverse_extend_forward;
+		my $reverse_extend_end;
 		my $tag = "D"; #解释overlap处于reads的哪一segment上,F代表前一段，E代表后一段；
 
-			my $cut_forward_seq;	#切割segment1的后端;
+		my $cut_forward_seq;	#切割segment1的后端;
 		my $cut_end_seq;	#切割segment2的前端;
 
 		my $length_reads = $map1 + $map2;
@@ -120,6 +132,8 @@ while(<IN>){
 					print OUT "\t$str_2\t$pos_2_start\t$seq_2\t$pos_2_end\n";
 					print OUT "overlap:\t$tag\t$overlap_seq\t${overlap_seq_length}nt\tdistance:\t${distance}nt\n";
 					print OUT "$seq_1$seq_2\t$id_real\n";
+					print OBAM "$_\n$line\n";
+
 				}
 				else{
 					$tmp_end = $pos_2_end + 31;
@@ -135,6 +149,7 @@ while(<IN>){
 					print OUT "\t$str_2\t$pos_2_end\t$seq_2\t$pos_2_start\n";
 					print OUT "overlap:\t$tag\t$overlap_seq\t${overlap_seq_length}nt\tdistance:\t${distance}nt\n";
 					print OUT "$seq_1$seq_2\t$id_real\n";
+					print OBAM "$_\n$line\n";
 				}
 			}
 			else{
@@ -158,6 +173,7 @@ while(<IN>){
 					print OUT "\t$str_2\t$pos_2_start\t$seq_2\t$pos_2_end\n";
 					print OUT "overlap:\t$tag\t$overlap_seq\t${overlap_seq_length}nt\tdistance:\t${distance}nt\n";
 					print OUT "$seq_1$seq_2\t$id_real\n";
+					print OBAM "$_\n$line\n";
 				}
 				else{
 					$tmp_end = $pos_2_end + 31;
@@ -173,6 +189,7 @@ while(<IN>){
 					print OUT "\t$str_2\t$pos_2_end\t$seq_2\t$pos_2_start\n";
 					print OUT "overlap:\t$tag\t$overlap_seq\t${overlap_seq_length}nt\tdistance:\t${distance}nt\n";
 					print OUT "$seq_1$seq_2\t$id_real\n";
+					print OBAM "$_\n$line\n";
 				}
 			}
 		}
@@ -181,6 +198,7 @@ while(<IN>){
 }
 close IN;
 close OUT;
+close OBAM;
 close ERR;
 
 ##根据FLAG值判断reads比对到基因组的正链还是负链;
@@ -219,7 +237,6 @@ sub length_cut_2{
 	$seq_cut = uc($seq_cut);
 	return $seq_cut;
 }
-
 
 ##获得全长reads在reference上的序列;
 sub ref_reads_seq{

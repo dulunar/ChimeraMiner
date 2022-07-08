@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #########################################################################
-# File Name: Run_Finder.pl
+# File Name: Generate_Shell_Finder.pl
 # Author: Luna
 # Mail: nlu@seu.edu.cn
 # Created Time: Tue 25 Sep 2018 06:44:00 PM CST
@@ -13,9 +13,12 @@ use File::Spec;
 
 our $AUTHOR = '$Author: Na Lu <nlu@seu.edu.cn> $';
 
+my $red = "\033[0;31m";
+my $end = "\033[0m";
+
 my $idir = dirname(File::Spec->rel2abs( $0 )); chomp $idir;
 
-my ($list,$out,$ref,$step1,$step2,$len,$help);
+my ($list,$out,$ref,$step1,$step2,$len,$samtools, $bwa, $help);
 
 GetOptions
 (	
@@ -25,6 +28,8 @@ GetOptions
 	"S2:s"=>\$step2,
 	"L=i"=>\$len,
 	"r=s"=>\$ref,
+	"b=s"=>\$bwa,
+	"t=s"=>\$samtools,
 	"help|?"=>\$help,
 );
 
@@ -39,7 +44,9 @@ Options:
 	-S1 <file> <the first scripts for Finder> <default:$idir/Insertion.SRExtract.ReConFastq.pl>
 	-S2 <file> <the second scripts for Finder> <default:$idir/SearchOverlapSEchimera.pl>
 	-L <INT> <min Length of each segment> <default:30>
-	-r <complete path of genome reference> <default: /home/luna/Desktop/database/homo_bwa/hsa.fa>
+	-r <${red}complete path of genome reference$end> <default: /home/luna/Desktop/database/homo_bwa/hsa.fa>
+	-b <${red}the complete path of bwa> (dflt: `which bwa`)$end
+	-t <${red}the complete path of samtools> (dflt: `which samtools`)$end
 
 INFO
 
@@ -51,9 +58,26 @@ $step2 ||= "$idir/SearchOverlapSEchimera.pl";
 $len ||= 30;
 $ref ||= "/home/luna/Desktop/database/homo_bwa/hsa.fa";
 
-`samtools faidx $ref` if(! -e "${ref}.fai"); # check if there indexed for reference.
+die "$red$ref did not exists$end\n" if(! -e "$ref");
 
-my $refdir = dirname(File::Spec->rel2abs( $ref ));      chomp $refdir;
+if(! defined $samtools){
+	$samtools = `which samtools`;
+	$samtools=~s/^s+|\s+$//g;
+}
+die "$red samtools not exists, please write your samtools path to your environment configuration, maybe ~/.bashrc$end\n" if(! $samtools);
+die $red."$samtools not exists, Please Check it$end\n" if(! -e $samtools);
+
+if(! defined $bwa){
+	$bwa = `which bwa`;
+	$bwa=~s/^\s+|\s+$//g;
+}
+die "$red bwa did not exists, please write your bwa path to your environment configuration, maybe ~/.bashrc$end\n" if(! $bwa);
+die $red."$bwa not exists, Please Check it$end\n" if(! -e $bwa);
+
+`$samtools faidx $ref` if(! -e "${ref}.fai"); # check if there indexed for reference.
+
+my $refdir = dirname(File::Spec->rel2abs( $ref ));
+chomp $refdir;
 
 my $sdir;
 
@@ -63,28 +87,32 @@ while(<IN>){
 	my ($samp,$bam) = split /\s+/,$_;
 	my $dir = dirname($bam);
 	$sdir = $dir;
-	
+
+	my $sort = `$samtools view -H $bam | grep "SO:coordinate"`;
+	$sort=~s/^\s+|\s+$//g;
+	die $red."$bam is a sorted bam, can not used in this pipeline$end" if($sort);
+
 	$out = "runFinder.$samp.sh";
 
 	open OH,"> $sdir/$out" || die $!;
 	
 	print OH "echo starts\ndate\n";
-	print OH "perl $step1 -i $bam -m $samp -d $dir -r $ref && echo first split and find INSERT chimerasjob done\ndate\n";
+	print OH "perl $step1 -i $bam -m $samp -d $dir -r $ref -t $samtools -b $bwa && echo first split and find INSERT chimerasjob done\ndate\n";
 	print OH "sh $dir/Chr_split/run.aln.sh &> $dir/Chr_split/run.aln.sh.log && echo realign soft-alignment reads to reference\n";
-	print OH "split -l 8 $dir/run.$samp.4Search.sh $dir/run.4Search\n";
+	print OH "split -l 4 $dir/run.$samp.4Search.sh $dir/run.4Search\n";
 	print OH "chmod +x $dir/run.4Search*\n";
-	print OH "ls $dir/run.4Search* | perl -ne \'chomp;\`nohup sh \$_ &> \$_.log &\`;\'\n";
+	print OH "for i in `ls $dir/run.4Search* | grep -v log`\ndo\n\tnohup sh \$i &> \$i.log &\ndone\n";
 	
 	close OH;
 
 	open OUT,"> $sdir/run.$samp.4Search.sh" || die $!;
 	for my $chr(1..22,"X","Y","MT"){
 		my $realigngz = "$dir/Chr_split/$samp.chr$chr.sam.gz";
-		print OUT "date\nperl $step2 -i $realigngz -o $samp.chr$chr -L $len -d $dir -r $refdir > log.step4.chr$chr\ngzip $dir/chimeras/$samp.chr$chr\ngzip $dir/chimeras/$samp.chr$chr.err\necho chr$chr is done\ndate\n";
+		print OUT "date\nperl $step2 -i $realigngz -o $samp.chr$chr -L $len -d $dir -r $refdir -t $samtools\n";
+		print OUT "echo chr$chr is done\ndate\n";
 	}
 	close OUT;
 }
 close IN;
-#close OH;
 
 `chmod +x $sdir/*.sh`;
