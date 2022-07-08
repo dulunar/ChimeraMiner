@@ -13,4 +13,4 @@ cd $dir/Test
 rm -rf run.4Searcha* log.step4.chr*
 
 # Filtering, classification, and statistics, All the parameters represent what can be seen in the script.
-perl ChimerasDownstream.pl -d $dir/Test/chimeras -n Test -L 30 -s 25 -b 5000
+perl ChimerasDownstream.pl -d $dir/Test/chimeras -n Test -L 30 -s 25 -b 5000 > $dir/Test/Test.chimera.stat.txt 
