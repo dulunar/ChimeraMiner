@@ -31,7 +31,7 @@ In this pipeline, we need some Perl Modules, we should install these modules bef
 I recommand to use "cpanm" to install Perl Modules.
 
 ## Test
-The Test folder contains an example. It turns out that all the scripts are running. You can check out how to use the pipeline. 
+[The Test folder contains an example](https://github.com/dulunar/ChimeraMiner/tree/master/Test). It turns out that all the scripts are running. You can check out how to use the pipeline. 
 In this folder, just run workstep.sh first, this shell will generate bam file and chimera's files. When all works in workstep.sh finished, then run filterstep.sh, this shell will deal with the chimera's files and count.
 
 ### First, align reads to reference
