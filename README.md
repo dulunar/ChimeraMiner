@@ -6,6 +6,8 @@ In my server, my reference genome fold is:
 
 /home/luna/Desktop/database/homo_bwa
 
+So, in your analysis platform, change to your directory.
+
 In this fold, we have 26 fasta files (chr{1..22, X, Y, MT}.fa hsa.fa), each fasta file have indexed with bwa index.
 
 In additional, `hsa.fa` include all sequence from all chromosome (chr{1..22, X, Y, MT}).
@@ -21,6 +23,9 @@ done
 bwa index -a bwtsw hsa.fa &>> bwa-index.log
 samtools faidx hsa.fa &>> samtool-index.log
 ```
+
+In here, please make sure the name of your chromosomes is like "chr1 chr2 chr3 ... chrX chrY chrMT", Thanks.
+
 ## Perl Modules Preparation
 In this pipeline, we need some Perl Modules, we should install these modules before run it.
 1. Getopt::Long

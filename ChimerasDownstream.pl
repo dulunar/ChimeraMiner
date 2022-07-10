@@ -59,7 +59,7 @@ for my $chr (1..22,"X","Y", "MT") {
 		$in = "$dir/$name.chr$chr.gz";
 	}
 	else{
-		die "${red}no $chr file in this directory $dir$rend\n";
+		print "${red}PS: no chromosome $chr chimera file in this directory $dir$rend\n";
 	}
 	
 	next unless $in;
