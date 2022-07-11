@@ -229,9 +229,9 @@ for my $fq1(`ls $dir/Chr_split/chr*.1.fastq*`){
 	my $fq2=$fq1;
 	$fq2 =~s/\.1\.fastq/\.2\.fastq/g;
 	my ($chr)=(split /\//,$fq1)[-1]=~/(chr.*)\.1\.fastq/;
-	print SHELL "bwa aln -t 4 -l 14 $refdir/$chr.fa $fq1 -f $dir/Chr_split/$chr.1.sai\n";
-	print SHELL "bwa aln -t 4 -l 14 $refdir/$chr.fa $fq2 -f $dir/Chr_split/$chr.2.sai\n";
-	print SHELL "bwa sampe $refdir/$chr.fa $dir/Chr_split/$chr.1.sai $dir/Chr_split/$chr.2.sai $fq1 $fq2 | gzip > $dir/Chr_split/$name.$chr.sam.gz\n";
+	print SHELL "$bwa aln -t 4 -l 14 $refdir/$chr.fa $fq1 -f $dir/Chr_split/$chr.1.sai\n";
+	print SHELL "$bwa aln -t 4 -l 14 $refdir/$chr.fa $fq2 -f $dir/Chr_split/$chr.2.sai\n";
+	print SHELL "$bwa sampe $refdir/$chr.fa $dir/Chr_split/$chr.1.sai $dir/Chr_split/$chr.2.sai $fq1 $fq2 | gzip > $dir/Chr_split/$name.$chr.sam.gz\n";
 	print SHELL "rm $dir/Chr_split/$chr.1.sai $dir/Chr_split/$chr.2.sai\n";
 }
 print SHELL "echo Finished Realignment\ndate\n";
