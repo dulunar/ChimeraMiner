@@ -100,7 +100,7 @@ for my $chr (1..22,"X","Y", "MT") {
 		if ($len2 < $minLen || $len1 < $minLen) {
 			print OUT_1 "$line_1\n$line_2\n$line_3\n$line_4\n$line_5\n$line_6\n";
 		}
-		elsif(abs($dis) > $bgd && abs($dis) > $smd) {
+		elsif(abs($dis) > $bgd || abs($dis) < $smd) {
 			print OUT_1 "$line_1\n$line_2\n$line_3\n$line_4\n$line_5\n$line_6\n";
 		}
 		elsif(abs($lenp) <= 2 || $lenp eq "") {
